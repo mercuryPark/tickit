@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "Tickit — AI 티켓 분석기",
+    "description": "확장 이름 (Chrome Web Store 및 브라우저 표시용)."
+  },
+  "extDescription": {
+    "message": "모호한 Jira 티켓을 AI로 개발자용 체크리스트로 변환합니다.",
+    "description": "Chrome Web Store 리스팅용 짧은 설명."
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "Tickit — AI Ticket Analyzer",
+    "description": "Extension name shown in Chrome Web Store and browser."
+  },
+  "extDescription": {
+    "message": "Turn vague Jira tickets into developer-ready checklists using AI.",
+    "description": "Short description shown in Chrome Web Store listing."
+  }
+}

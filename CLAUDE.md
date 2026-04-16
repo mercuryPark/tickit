@@ -5,12 +5,15 @@ This is a Chrome Extension (Manifest V3) called "Tickit" that converts vague Jir
 
 ## Essential Context
 Before starting any work, read these files in order:
-1. `docs/PROJECT_CONTEXT.md` — Business context, market analysis, competitive landscape, positioning
-2. `docs/TECHNICAL_SPEC.md` — Architecture, directory structure, type definitions, prompt design
-3. `docs/DEVELOPMENT_PLAN.md` — Day-by-day implementation plan with checkpoints
-4. `docs/SCENARIOS.md` — Real usage scenarios for prompt tuning and UI validation
-5. `docs/KNOWN_RISKS.md` — Technical risks, limitations, and mitigation strategies
-6. `docs/OPERATIONS_GUIDE.md` — Chrome Web Store submission, SW lifecycle, DOM maintenance, error monitoring, i18n, legal
+1. **`docs/PROGRESS.md`** — Current progress, next task, key decisions log. **READ THIS FIRST every session.**
+2. `docs/PROJECT_CONTEXT.md` — Business context, market analysis, competitive landscape, positioning
+3. `docs/TECHNICAL_SPEC.md` — Architecture, directory structure, type definitions, prompt design
+4. `docs/DEVELOPMENT_PLAN.md` — Day-by-day implementation plan with checkpoints
+5. `docs/SCENARIOS.md` — Real usage scenarios for prompt tuning and UI validation
+6. `docs/KNOWN_RISKS.md` — Technical risks, limitations, and mitigation strategies
+7. `docs/OPERATIONS_GUIDE.md` — Chrome Web Store submission, SW lifecycle, DOM maintenance, error monitoring, i18n, legal
+
+After completing any milestone, **update `docs/PROGRESS.md`** — check boxes, add decisions to the log, update "current position" section.
 
 ## Architecture
 - **No server.** Everything runs in the browser extension.

@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+/* Tailwind v4: CSS-first 설정. 추가 토큰이 필요해지면 @theme 블록으로 확장. */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
