@@ -70,3 +70,8 @@ export type MessageToSP =
   | { type: 'ANALYSIS_STREAMING'; payload: { chunk: string } }
   | { type: 'ANALYSIS_COMPLETE'; payload: AnalysisResult }
   | { type: 'ANALYSIS_ERROR'; payload: { code: string; message: string } }
+
+/** Service Worker → Content Script 메시지 (SPA 네비 보조, 강제 재추출) */
+export type MessageToCS =
+  | { type: 'URL_CHANGED'; url: string }
+  | { type: 'FORCE_RE_EXTRACT' }

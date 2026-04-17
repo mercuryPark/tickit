@@ -25,7 +25,7 @@ After completing any milestone, **update `docs/PROGRESS.md`** — check boxes, a
 ## Tech Stack
 - TypeScript (strict)
 - React 18+
-- Vite + CRXJS (fallback: vite-plugin-web-extension if CRXJS has compatibility issues)
+- Vite + `vite-plugin-web-extension` (CRXJS 2.4는 content script 동적 import가 page world에서 실행되어 `chrome.runtime` 접근 불가 → 피벗함. 상세는 `docs/PROGRESS.md` 결정 로그 참조)
 - Manifest V3 (Side Panel API, Storage API)
 - Tailwind CSS
 - OpenAI / Anthropic API (user provides API key)

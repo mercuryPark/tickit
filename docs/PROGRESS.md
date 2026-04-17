@@ -8,7 +8,7 @@
 ## 🎯 현재 위치
 
 - **Phase:** 1 (MVP 개발)
-- **다음 작업:** Day 2 — `jira-extractor.ts` 구현 (셀렉터는 검증 완료, 실제 추출 로직 미작성)
+- **다음 작업:** Day 2 최종 검증 — 레이블 있는 티켓 / 댓글 있는 티켓 / 외부 링크 포함 티켓 각각 추출 확인 → 통과 시 Day 3 AI 클라이언트
 - **마지막 업데이트:** 2026-04-17
 
 ---
@@ -16,7 +16,7 @@
 ## ✅ Phase 0 — 프로젝트 세팅 (완료: 2026-04-16)
 
 - [x] `pnpm create vite tickit --template react-ts` 스캐폴딩
-- [x] CRXJS 2.4.0 설치 (Vite 8 공식 호환 확인 — fallback 불필요)
+- [x] CRXJS 2.4.0 설치 (Vite 8 공식 호환 확인) → Day 2에 isolated world 이슈로 `vite-plugin-web-extension`으로 피벗
 - [x] Tailwind v4.2.2 + `@tailwindcss/vite` (PostCSS 없음, CSS-first)
 - [x] TECHNICAL_SPEC §3 디렉토리 구조 생성 (src/{content,background,sidepanel,shared}, public/{icons,_locales}, store/)
 - [x] TECHNICAL_SPEC §4 manifest.json 작성
@@ -30,7 +30,7 @@
 **남은 수동 작업:**
 - [ ] OpenAI API 키 발급
 - [ ] Anthropic API 키 발급
-- [ ] GitHub 리모트 연결 (현재 로컬 git repo만 있음)
+- [x] GitHub 리모트 연결 (`github.com/mercuryPark/tickit.git`)
 
 ---
 
@@ -51,21 +51,39 @@
 - 사용자가 티켓을 여는 주 경로는 **로드맵/보드에서 모달(drawer) 뷰** → MutationObserver 기반 감지 필수 (KNOWN_RISKS A7)
 - 회사 Jira는 한국어 UI + 10개+ 커스텀 필드 (`customfield_10038`, `_10045` 등) → v2 "프로젝트 컨텍스트 설정"의 명확한 타겟
 
-### ⏭️ Day 2 — Content Script 완성 + Service Worker 기초 (다음 작업)
+### 🚧 Day 2 — Content Script 완성 + Service Worker 기초 (대부분 검증 완료, 레이블/댓글/링크 최종 확인 중)
 
-- [ ] `src/content/jira-extractor.ts` 구현
-  - [ ] 셀렉터 → TicketData 변환
-  - [ ] HTML → plain text (코드 블록 보존)
-  - [ ] 담당자 텍스트에서 "나에게 할당" 제거
-  - [ ] `text-truncator.ts` 4000자 cap + `descriptionTruncated` 플래그
-  - [ ] SPA 네비게이션 감지 (Navigation API + fallback interval)
-  - [ ] 모달 뷰 MutationObserver (로드맵 drawer)
-- [ ] `src/background/service-worker.ts` 확장
-  - [ ] `chrome.runtime.onMessage`로 TICKET_DATA_EXTRACTED 수신
-  - [ ] **`return true` 필수** (OPERATIONS_GUIDE §2.3)
-  - [ ] `chrome.tabs.onUpdated`로 URL 변경 감지 → Content Script에 재추출 신호
-- [ ] `src/shared/message-retry.ts` 통합 — Content Script에서 실제 사용
-- [ ] 수동 테스트: Jira 티켓 열면 Content Script → SW 메시지 수신 로그 확인
+- [x] `src/content/jira-extractor.ts` 구현
+  - [x] 셀렉터 → TicketData 변환
+  - [x] **티켓 키 추출**: URL 우선 → DOM fallback (`a[href*="/browse/KEY"]` 브레드크럼, `data-testid*="issue-key"`) — 모달 뷰에서 URL이 보드 URL 그대로일 때 복구 성공
+  - [x] **비티켓 페이지 가드**: 키 추출 실패 시 skip (스프린트 보드에서 "오피스웨이브 스프린트" 같은 쓰레기 추출 방지)
+  - [x] HTML → plain text (코드 블록 보존, `<br>`/블록 요소 개행화, `&nbsp;` 정돈)
+  - [x] 담당자 텍스트에서 "나에게 할당" / "Assign to me" 제거
+  - [x] `text-truncator.ts` 4000자 cap + `descriptionTruncated` 플래그
+  - [x] SPA 네비게이션 감지 (Navigation API + 1s polling fallback)
+  - [x] 모달 뷰 MutationObserver (보드/로드맵 drawer) — heuristic: `issue-view`/`issue.views` testid 또는 summary heading 포함 노드
+  - [x] 추출 디바운스 300ms (연속 DOM 변화 방어)
+  - [x] **Labels 추출 v2**: chip 전용 셀렉터만 사용 (Atlassian Lozenge, `a[href*="labels="]`, sortable-item 자식 anchor). fallback으로 일반 span/a 긁는 건 폐기 → toolbar 버튼 "레이블 보기 옵션" 같은 UI chrome 오추출 차단. 레이블 없으면 `[]`.
+- [x] `src/background/service-worker.ts` 확장
+  - [x] `chrome.runtime.onMessage`로 TICKET_DATA_EXTRACTED 수신 + 로그
+  - [x] **`return true`** 비동기 응답용 (REQUEST_ANALYSIS는 `false` 반환, Day 3에서 구현)
+  - [x] `chrome.tabs.onUpdated`로 URL 변경 감지 → `MessageToCS.URL_CHANGED` 전송 (CS 미주입 시 graceful)
+- [x] `src/shared/types.ts`에 `MessageToCS` 추가 (URL_CHANGED / FORCE_RE_EXTRACT)
+- [x] `src/shared/message-retry.ts` 통합 — Content Script에서 실제 사용
+- [x] `pnpm lint` / `pnpm build` 통과
+- [x] **빌드 시스템 피벗**: CRXJS → `vite-plugin-web-extension` (상세는 결정 로그 참조)
+- [x] 실제 Jira에서 isolated world 동작 확인 (`chrome.runtime.sendMessage` 접근 OK)
+- [x] 실제 티켓(OC-6168)에서 key/title/description/truncated 플래그 정상 추출 확인
+- [x] 모달 뷰(`reason: 'modal-observer'`) + URL polling(`reason: 'url-poll'`) 둘 다 트리거 확인
+- [ ] **최종 검증 대기**:
+  - [ ] 레이블이 실제로 달린 티켓 → chip 셀렉터가 실제 label 값 잡는지 (현재 chip 셀렉터가 mercury Jira 인스턴스 DOM과 맞는지 미검증)
+  - [ ] 댓글이 있는 티켓 → `comments.length > 0` + author/body/createdAt 3필드 모두 채워짐
+  - [ ] Figma/GitHub 외부링크 포함 티켓 → `linkedUrls`에 수집
+  - [ ] 4000자 초과 설명 티켓 → `truncated: true`
+  - [ ] SW idle(~30초 방치) 후 네비게이션 → `sendMessageWithRetry` 재시도 성공
+  - [ ] 비 Jira 페이지 (`google.com`) → content script 미주입, 에러 없음
+
+**검증 중 셀렉터 mismatch 발견 시 대응:** `src/content/dom-selectors.ts`의 해당 필드 배열 앞에 새 셀렉터 추가 + "🧠 주요 결정/발견 로그"에 1줄 기록. Labels chip 셀렉터는 `jira-extractor.ts`의 `LABEL_CHIP_SELECTORS` 배열에 추가.
 
 ### Day 3~4 — AI API 호출 + 프롬프트
 ### Day 5~6 — Side Panel UI
@@ -86,6 +104,14 @@
 | 2026-04-17 | 아이콘은 placeholder 1x1 PNG (Day 10~11 교체) | 초기 빌드/로드 검증이 목적, 디자인 작업 지연 |
 | 2026-04-17 | `issue.views.issue-base.context.labels` testid를 labels primary에서 제외 | 여러 필드 공유 확인됨, 오추출 위험 |
 | 2026-04-17 | `sortable-item-container-labels`를 Labels primary로 사용 | 필드 고유 식별자 |
+| 2026-04-17 | ESLint `@typescript-eslint/no-unused-vars`에 `argsIgnorePattern: '^_'` 추가 + `require-yield` off | Phase 0 placeholder(ai-client, ai-stream-parser)의 시그니처 고정 관행 허용 |
+| 2026-04-17 | Content Script 추출은 300ms 디바운스 | MutationObserver + Navigation API + URL polling이 동시 트리거될 수 있음. 디바운스로 1회로 수렴 |
+| 2026-04-17 | `lastProcessedUrl`은 성공 추출 시점에만 갱신 | DOM 미로드로 실패한 URL도 다음 polling tick에서 재시도 가능해야 함 |
+| 2026-04-17 | SW `chrome.tabs.onUpdated`가 CS에 `URL_CHANGED` 송신. CS 미주입 시 sendMessage 실패는 graceful 삼킴 | 탭 새로 열렸거나 비 Jira 페이지는 CS가 없음. 에러로 두면 SW 콘솔 오염 |
+| 2026-04-17 | **빌드 시스템 CRXJS → `vite-plugin-web-extension` 피벗** | CRXJS 2.4.0이 content script를 loader + 동적 `import(chrome.runtime.getURL(...))` 패턴으로 주입하는데, 로드된 모듈이 isolated world를 잃고 page world에서 실행됨 → `chrome.runtime` undefined → 메시지 전송 불가. `vite-plugin-web-extension`은 각 엔트리를 IIFE로 사전 번들하여 content script 파일로 직접 주입, isolated world 유지. CLAUDE.md에 사전 허용된 fallback. |
+| 2026-04-17 | `console.debug` 대신 `console.log` 사용 (테스트 필수 로그만) | Chrome DevTools 기본 "Log levels"가 debug(Verbose)를 숨김. 사용자 테스트 시 로그가 안 보인다는 혼동 발생. 핵심 로그는 log, 선택적 진단은 debug 유지. |
+| 2026-04-17 | 티켓 키 추출 URL → DOM fallback 체인 | 보드/로드맵에서 모달로 티켓을 열면 URL은 보드 URL 그대로 유지 → URL 정규식이 빈 문자열 반환. 브레드크럼 `a[href*="/browse/KEY"]`에서 키를 복구. 그래도 못 찾으면 티켓 페이지 아님 → 추출 skip. |
+| 2026-04-17 | Labels 추출을 chip 전용 셀렉터로 제한 + fallback 폐기 | 일반 span/a 긁기 fallback이 toolbar 버튼 "레이블 보기 옵션" 같은 UI chrome을 잡음. 블록리스트 regex(`^레이블$` 등)는 "레이블보기 옵션" 처럼 공백 없이 붙은 button aria-label 텍스트를 놓침. chip 전용 셀렉터(`[data-smart-element="Lozenge"]`, `a[href*="labels="]`)만 사용하고 fallback 제거 — 레이블 0개면 `[]`. 새 Jira 인스턴스마다 chip DOM 검증 필요. |
 
 ---
 

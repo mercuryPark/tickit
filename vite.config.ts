@@ -1,30 +1,31 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { crx } from '@crxjs/vite-plugin'
-import fs from 'node:fs'
+import webExtension from 'vite-plugin-web-extension'
 
-// CRXJS는 manifest.json을 읽어 Chrome Extension 번들을 생성한다.
-// JSON import assertion 대신 fs.readFileSync를 사용하여 TS 설정(verbatimModuleSyntax 등)과 충돌을 피한다.
-const manifest = JSON.parse(fs.readFileSync('./manifest.json', 'utf-8'))
+// CRXJS에서 vite-plugin-web-extension으로 피벗 (2026-04-17):
+//  CRXJS 2.4의 content script loader가 동적 import로 실제 스크립트를 로드하는데,
+//  이 로드된 모듈이 page world에서 실행되면서 chrome.runtime 접근이 끊겼다.
+//  vite-plugin-web-extension은 각 엔트리를 IIFE로 사전 번들하여 content script로 직접
+//  주입하므로 isolated world가 유지된다.
+//  CLAUDE.md의 승인된 fallback 플러그인.
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    crx({ manifest }),
+    webExtension({
+      manifest: 'manifest.json',
+      // content script + service worker는 자동으로 isolated/worker 컨텍스트에 맞게 번들.
+    }),
   ],
   build: {
     // Chrome Web Store 심사에 sourcemap 불필요 + 코드 구조 노출 방지
     sourcemap: false,
   },
   server: {
-    // CRXJS HMR port 고정 (dev 시 확장 리로드 안정화)
+    // dev 서버 포트 고정 (HMR 안정화)
     port: 5173,
     strictPort: true,
-    hmr: {
-      port: 5173,
-    },
   },
 })
